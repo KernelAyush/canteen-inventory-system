@@ -1,0 +1,12 @@
+# Exact versions installed in the build environment. See docs/VERIFICATION.md for checks actually run.
+fastapi==0.143.0
+uvicorn==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.15.0
+SQLAlchemy==2.1.4
+psycopg[binary]==3.3.6
+alembic==1.20.0
+python-dotenv==1.2.4
+tzdata==2026.5
+pytest==9.1.1
+httpx==0.28.1

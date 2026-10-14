@@ -1,0 +1,1 @@
+"""Canteen inventory portfolio application."""

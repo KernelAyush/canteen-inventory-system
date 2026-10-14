@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A local canteen inventory and reconciliation workspace."
+    />
+    <title>Canteen · Inventory & Reconciliation</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to workspace</a>
+    <aside class="sidebar">
+      <a class="brand" href="#overview"
+        ><span class="brand-mark" aria-hidden="true">c.</span
+        ><span
+          >Canteen<span class="brand-sub">THE STOCK WORKSPACE</span></span
+        ></a
+      >
+      <div class="workspace-label">YOUR WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <a href="#overview" data-page="overview"
+          ><span aria-hidden="true">◫</span> Overview</a
+        >
+        <a href="#stock" data-page="stock"
+          ><span aria-hidden="true">▤</span> Ingredients & batches</a
+        >
+        <a href="#activity" data-page="activity"
+          ><span aria-hidden="true">↗</span> Record activity</a
+        >
+        <a href="#reconcile" data-page="reconcile"
+          ><span aria-hidden="true">✓</span> Reconcile stock</a
+        >
+        <a href="#history" data-page="history"
+          ><span aria-hidden="true">◷</span> Movement history</a
+        >
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="small-tag">PERSONAL PROJECT</span>
+        <p>One canteen.<br />Every movement accounted for.</p>
+        <a href="/docs" target="_blank" rel="noopener"
+          >Explore the API <span aria-hidden="true">↗</span></a
+        >
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <span class="location"
+          ><span class="location-dot"></span> Main canteen
+          <span class="muted">/ Inventory</span></span
+        ><span id="connection" class="connection">Connecting…</span>
+      </header>
+      <main id="main" tabindex="-1">
+        <div id="global-error" class="notice error" role="alert" hidden></div>
+        <section
+          id="page-overview"
+          class="page"
+          aria-labelledby="overview-title"
+        >
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">A CLEAR VIEW OF YOUR KITCHEN</p>
+              <h1 id="overview-title">Stock, without the guesswork.</h1>
+              <p class="subtitle">
+                Know what is available, what needs attention, and where stock
+                goes.
+              </p>
+            </div>
+            <a class="button primary" href="#activity">+ Record activity</a>
+          </div>
+          <div class="snapshot-line">
+            <span class="live-dot"></span> Current inventory
+            <span id="business-date" class="muted"></span
+            ><button type="button" class="text-button" id="refresh-overview">
+              Refresh ↻
+            </button>
+          </div>
+          <div class="stats" id="overview-stats" aria-live="polite">
+            <div class="stat skeleton">Loading your stock…</div>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Time to restock</h2>
+                  <p>Usable stock below its reorder threshold.</p>
+                </div>
+                <span class="icon-box amber" aria-hidden="true">↓</span>
+              </div>
+              <div id="low-stock" class="panel-body"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Use these batches first</h2>
+                  <p>Available batches expiring within 7 days.</p>
+                </div>
+                <span class="icon-box teal" aria-hidden="true">◷</span>
+              </div>
+              <div id="expiring-stock" class="panel-body"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Expired stock</h2>
+                <p>
+                  Still on the shelf, excluded from usable stock. Record
+                  disposal as wastage.
+                </p>
+              </div>
+              <a class="text-button" href="#activity">Record wastage →</a>
+            </div>
+            <div id="expired-stock" class="panel-body"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Activity at a glance</h2>
+                <p>
+                  Date filters apply to these metrics; inventory cards above
+                  always show current stock.
+                </p>
+              </div>
+            </div>
+            <form id="dashboard-filter" class="filter-bar">
+              <label>From<input type="date" name="start_date" /></label
+              ><label>To<input type="date" name="end_date" /></label
+              ><label
+                >Ingredient<select
+                  name="ingredient_id"
+                  class="ingredient-filter"
+                >
+                  <option value="">All ingredients</option>
+                </select></label
+              ><button class="button secondary" type="submit">
+                Apply filters
+              </button>
+            </form>
+            <div id="activity-metrics" class="metrics-grid panel-body"></div>
+          </section>
+        </section>
+
+        <section
+          id="page-stock"
+          class="page"
+          aria-labelledby="stock-title"
+          hidden
+        >
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">THE INVENTORY</p>
+              <h1 id="stock-title">Ingredients & batches</h1>
+              <p class="subtitle">
+                A fixed unit for every ingredient. An expiry date for every
+                batch.
+              </p>
+            </div>
+            <button class="button primary" id="add-ingredient" type="button">
+              + Add ingredient
+            </button>
+          </div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Ingredient catalogue</h2>
+                <p>
+                  Balances include every recorded receipt, use, wastage and
+                  adjustment.
+                </p>
+              </div>
+            </div>
+            <form id="ingredient-filter" class="filter-bar">
+              <label class="grow"
+                >Find an ingredient<input
+                  name="search"
+                  type="search"
+                  placeholder="Search rice, milk, eggs…" /></label
+              ><button type="submit" class="button secondary">Search</button>
+            </form>
+            <div id="ingredients-table" class="table-wrap"></div>
+            <div id="ingredients-pagination" class="pagination"></div>
+          </section>
+          <div class="stock-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Receive a batch</h2>
+                  <p>Add incoming stock to the movement history.</p>
+                </div>
+              </div>
+              <form
+                id="receipt-form"
+                class="form-stack panel-body"
+                data-idempotent="true"
+              >
+                <label
+                  >Ingredient<select
+                    name="ingredient_id"
+                    class="ingredient-picker"
+                    required
+                  >
+                    <option value="">Choose ingredient</option>
+                  </select></label
+                >
+                <div class="form-row">
+                  <label
+                    >Batch reference<input
+                      name="reference"
+                      required
+                      maxlength="100"
+                      placeholder="e.g. RICE-001" /></label
+                  ><label
+                    >Quantity<input
+                      name="quantity"
+                      type="number"
+                      min="0.001"
+                      max="999999999.999"
+                      step="0.001"
+                      required
+                      placeholder="0.000"
+                  /></label>
+                </div>
+                <div class="form-row">
+                  <label
+                    >Received on<input
+                      name="received_date"
+                      type="date"
+                      required /></label
+                  ><label
+                    >Expires on<input name="expiry_date" type="date" required
+                  /></label>
+                </div>
+                <label
+                  >Note <span class="muted">(optional)</span
+                  ><input
+                    name="note"
+                    maxlength="500"
+                    placeholder="Supplier or delivery details"
+                /></label>
+                <p class="form-help">
+                  Previously expired receipts can be recorded, but cannot be
+                  consumed.
+                </p>
+                <div class="form-feedback" role="status" hidden></div>
+                <button class="button primary" type="submit">
+                  Receive stock
+                </button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Batch register</h2>
+                  <p>Ordered by earliest expiry first.</p>
+                </div>
+              </div>
+              <form id="batch-filter" class="filter-bar compact">
+                <label
+                  >Ingredient<select
+                    name="ingredient_id"
+                    class="ingredient-filter"
+                  >
+                    <option value="">All ingredients</option>
+                  </select></label
+                ><label
+                  >Status<select name="status">
+                    <option value="">All batches</option>
+                    <option value="available">Available</option>
+                    <option value="expiring">Expiring soon</option>
+                    <option value="expired">Expired</option>
+                  </select></label
+                ><button type="submit" class="button secondary">Filter</button>
+              </form>
+              <div id="batches-table" class="table-wrap"></div>
+              <div id="batches-pagination" class="pagination"></div>
+            </section>
+          </div>
+        </section>
+
+        <section
+          id="page-activity"
+          class="page"
+          aria-labelledby="activity-title"
+          hidden
+        >
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">KEEP THE RECORD STRAIGHT</p>
+              <h1 id="activity-title">Record activity</h1>
+              <p class="subtitle">
+                Stock leaves the shelf. Its history stays here.
+              </p>
+            </div>
+            <a class="button secondary" href="#history">View history →</a>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <span class="small-tag teal-text">DAILY USE</span>
+                  <h2>Record consumption</h2>
+                  <p>
+                    We allocate stock from the earliest-expiring eligible
+                    batches.
+                  </p>
+                </div>
+              </div>
+              <form
+                id="consume-form"
+                class="form-stack panel-body"
+                data-idempotent="true"
+              >
+                <label
+                  >Ingredient<select
+                    name="ingredient_id"
+                    class="ingredient-picker"
+                    required
+                  >
+                    <option value="">Choose ingredient</option>
+                  </select></label
+                >
+                <div id="consumption-availability" class="context-note">
+                  Select an ingredient to see its usable stock.
+                </div>
+                <label
+                  >Quantity<input
+                    name="quantity"
+                    type="number"
+                    min="0.001"
+                    max="999999999.999"
+                    step="0.001"
+                    required
+                    placeholder="0.000" /></label
+                ><label
+                  >Note <span class="muted">(optional)</span
+                  ><input
+                    name="note"
+                    maxlength="500"
+                    placeholder="e.g. Lunch preparation"
+                /></label>
+                <div class="form-feedback" role="status" hidden></div>
+                <button class="button primary" type="submit">
+                  Record consumption
+                </button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <span class="small-tag amber-text">LOSS & DISPOSAL</span>
+                  <h2>Record wastage</h2>
+                  <p>Keep a reason with every discarded quantity.</p>
+                </div>
+              </div>
+              <form
+                id="waste-form"
+                class="form-stack panel-body"
+                data-idempotent="true"
+              >
+                <label
+                  >Batch<select name="batch_id" class="batch-picker" required>
+                    <option value="">Choose batch</option>
+                  </select></label
+                >
+                <div id="wastage-availability" class="context-note">
+                  Expired batches can be recorded as wastage.
+                </div>
+                <label
+                  >Quantity<input
+                    name="quantity"
+                    type="number"
+                    min="0.001"
+                    max="999999999.999"
+                    step="0.001"
+                    required
+                    placeholder="0.000" /></label
+                ><label
+                  >Reason<textarea
+                    name="reason"
+                    required
+                    minlength="1"
+                    maxlength="500"
+                    rows="2"
+                    placeholder="e.g. Spoilage discovered during morning checks"
+                  ></textarea>
+                </label>
+                <div class="form-feedback" role="status" hidden></div>
+                <button class="button primary" type="submit">
+                  Record wastage
+                </button>
+              </form>
+            </section>
+          </div>
+          <section
+            class="allocation-result panel"
+            id="operation-result"
+            hidden
+            aria-live="polite"
+          ></section>
+          <div class="quiet-note">
+            <span aria-hidden="true">✓</span>
+            <p>
+              Entries use the canteen’s current business date. A failed request
+              leaves stock unchanged. Receipts can be entered on the
+              <a href="#stock">ingredients & batches</a> page.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="page-reconcile"
+          class="page"
+          aria-labelledby="reconcile-title"
+          hidden
+        >
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">MATCH THE SHELF TO THE SYSTEM</p>
+              <h1 id="reconcile-title">Reconcile stock</h1>
+              <p class="subtitle">
+                Count a batch, review the difference, then confirm an
+                adjustment.
+              </p>
+            </div>
+          </div>
+          <div class="stock-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Enter a physical count</h2>
+                  <p>Creating a preview does not change stock.</p>
+                </div>
+              </div>
+              <form
+                id="reconcile-form"
+                class="form-stack panel-body"
+                data-idempotent="true"
+              >
+                <label
+                  >Batch<select name="batch_id" class="batch-picker" required>
+                    <option value="">Choose batch</option>
+                  </select></label
+                ><label
+                  >Counted quantity<input
+                    name="counted_quantity"
+                    type="number"
+                    min="0"
+                    max="999999999.999"
+                    step="0.001"
+                    required
+                    placeholder="0.000" /></label
+                ><label
+                  >Reason<textarea
+                    name="reason"
+                    required
+                    maxlength="500"
+                    rows="3"
+                    placeholder="e.g. Physical stock count after closing"
+                  ></textarea>
+                </label>
+                <div class="form-feedback" role="status" hidden></div>
+                <button class="button primary" type="submit">
+                  Preview discrepancy
+                </button>
+              </form>
+            </section>
+            <section class="panel" id="reconcile-preview">
+              <div class="panel-head">
+                <div>
+                  <h2>Review before confirming</h2>
+                  <p>Adjustments preserve every previous movement.</p>
+                </div>
+              </div>
+              <div class="panel-body empty-state">
+                <div class="empty-icon" aria-hidden="true">✓</div>
+                <h3>Start with a physical count</h3>
+                <p>
+                  Your recorded balance and counted quantity will appear here
+                  for review.
+                </p>
+              </div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Reconciliation register</h2>
+                <p>
+                  If stock changed after a preview, take a fresh count and
+                  create a new preview.
+                </p>
+              </div>
+            </div>
+            <form class="filter-bar" id="reconciliation-filter">
+              <label
+                >Status<select name="status">
+                  <option value="">All reconciliations</option>
+                  <option value="pending">Pending review</option>
+                  <option value="confirmed">Confirmed</option>
+                </select></label
+              ><button type="submit" class="button secondary">Filter</button>
+            </form>
+            <div class="table-wrap" id="reconciliations-table"></div>
+            <div class="pagination" id="reconciliations-pagination"></div>
+          </section>
+        </section>
+
+        <section
+          id="page-history"
+          class="page"
+          aria-labelledby="history-title"
+          hidden
+        >
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">EVERY CHANGE HAS A STORY</p>
+              <h1 id="history-title">Movement history</h1>
+              <p class="subtitle">
+                A traceable record of receipts, consumption, wastage and
+                adjustments.
+              </p>
+            </div>
+          </div>
+          <section class="panel">
+            <form class="filter-bar history-filters" id="history-filter">
+              <label
+                >Ingredient<select
+                  name="ingredient_id"
+                  class="ingredient-filter"
+                >
+                  <option value="">All ingredients</option>
+                </select></label
+              ><label
+                >Movement<select name="kind">
+                  <option value="">All movements</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="consumption">Consumption</option>
+                  <option value="wastage">Wastage</option>
+                  <option value="adjustment">Adjustment</option>
+                </select></label
+              ><label>From<input type="date" name="start_date" /></label
+              ><label>To<input type="date" name="end_date" /></label
+              ><button type="submit" class="button secondary">
+                Apply filters</button
+              ><button type="reset" class="text-button">Reset</button>
+            </form>
+            <div id="movements-table" class="table-wrap"></div>
+            <div id="movements-pagination" class="pagination"></div>
+          </section>
+        </section>
+        <footer>
+          Built for one canteen. Designed around reliable records.
+          <span id="timezone-label"></span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="ingredient-dialog" aria-labelledby="ingredient-dialog-title">
+      <form id="ingredient-form" class="form-stack">
+        <div class="dialog-heading">
+          <h2 id="ingredient-dialog-title">Add ingredient</h2>
+          <button
+            type="button"
+            class="icon-button"
+            id="close-ingredient"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+        <input type="hidden" name="id" /><label
+          >Ingredient name<input
+            name="name"
+            required
+            maxlength="100"
+            placeholder="e.g. Rice" /></label
+        ><label
+          >Measurement unit<select name="unit" required>
+            <option value="kg">Kilograms (kg)</option>
+            <option value="litre">Litres (L)</option>
+            <option value="piece">Pieces</option>
+          </select></label
+        ><label
+          >Low-stock threshold<input
+            type="number"
+            name="low_stock_threshold"
+            min="0"
+            max="999999999.999"
+            step="0.001"
+            value="0"
+            required
+        /></label>
+        <p class="form-help">
+          The unit cannot change after stock movements exist. Low-stock alerts
+          use the usable, unexpired balance.
+        </p>
+        <div class="form-feedback" role="status" hidden></div>
+        <button type="submit" class="button primary">Save ingredient</button>
+      </form>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

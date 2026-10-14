@@ -4,6 +4,16 @@ A personal portfolio application for one canteen. Record batch receipts, allocat
 
 This is a local demonstration project with sample data. It has no login and is not configured for public deployment.
 
+## Screenshots
+### Stock overview
+<img width="1870" height="982" alt="Screenshot 2026-10-14 233844" src="https://github.com/user-attachments/assets/3bc5f871-d995-4484-b708-31d7deacc1c6" />
+### Ingredients and Batches
+<img width="1876" height="977" alt="Screenshot 2026-10-14 234503" src="https://github.com/user-attachments/assets/548be58e-0ae9-47f1-8e8c-2dc3f2a5f22b" />
+### Record Activity
+<img width="1861" height="986" alt="Screenshot 2026-10-14 234516" src="https://github.com/user-attachments/assets/6a2699a7-9ca1-4945-826f-d2b86487ed3e" />
+### Docs 
+<img width="1226" height="982" alt="Screenshot 2026-10-14 233929" src="https://github.com/user-attachments/assets/a740e874-a05b-48f0-8f2b-0e0a3ec9f3d4" />
+
 ## Windows quick start
 
 Your existing Windows, Python, PostgreSQL and VS Code setup is sufficient. Use a **PowerShell terminal in the extracted project folder**, where this README and `requirements.txt` are located. Python 3.11 or newer is required. Dependency versions and actual verification results are recorded in [requirements.txt](requirements.txt) and [docs/VERIFICATION.md](docs/VERIFICATION.md).
